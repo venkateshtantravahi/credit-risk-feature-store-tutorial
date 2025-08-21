@@ -1,0 +1,18 @@
+project: credit_risk_features
+# By default, the registry is a file (but can be turned into a more scalable SQL-backed registry)
+registry: data/registry.db
+# The provider primarily specifies default offline / online stores & storing the registry in a given cloud
+offline_store:
+    type: postgres
+    host: localhost
+    port: 5432
+    user: postgres_admin
+    database: credit_risk
+    sslmode: disable
+
+online_store:
+    type: redis
+    host: localhost
+    port: 6379
+
+provider: local
