@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: final_customer_features
+    description: "Features by (customer_id, month) for training/serving."
+    tests:
+      - features_not_null_keys:
+          arguments: {
+                       entity_keys: ['customer_id'],
+                       timestamp_col: 'event_timestamp'
+          }
+      - features_unique_on_keys:
+          arguments: {
+                       entity_keys: ['customer_id'],
+                       timestamp_col: 'event_timestamp'
+          }
+      - non_future_timestamp:
+          arguments: { column_name: 'event_timestamp' }
+
+    columns:
+      - name: loan_amount
+        tests:
+          - dbt_utils.accepted_range:
+              arguments: { min_value: 0 }
+      - name: int_rate_pct
+        tests:
+          - dbt_utils.accepted_range:
+              arguments: {
+                           min_value: 0,
+                           max_value: 200,
+                           inclusive: true
+              }
+      - name: revol_util_pct
+        tests:
+          - dbt_utils.accepted_range:
+              arguments: {
+                           min_value: 0,
+                           max_value: 200,
+                           inclusive: true
+              }
+      - name: prior_12m_loan_cnt
+        tests:
+          - dbt_utils.accepted_range:
+              arguments: {
+                           min_value: 0
+              }

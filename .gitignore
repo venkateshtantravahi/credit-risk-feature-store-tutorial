@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# kaggle
+kaggle/
+.kaggle/
+**/kagle.json
+
 # Distribution / packaging
 .Python
 build/
@@ -35,6 +40,7 @@ MANIFEST
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+pip-wheel-metadata/
 
 # Unit test / coverage reports
 htmlcov/
@@ -85,14 +91,14 @@ ipython_config.py
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
 #   intended to run in multiple environments; otherwise, check them in:
-# .python-version
+ .python-version
 
 # pipenv
 #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
 #   However, in case of collaboration, if having platform-specific dependencies or dependencies
 #   having no cross-platform support, pipenv may install dependencies that don't work, or not
 #   install all needed dependencies.
-#Pipfile.lock
+Pipfile.lock
 
 # UV
 #   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
@@ -173,7 +179,10 @@ cython_debug/
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+.idea/
+.DS_Store
+
+*.code-workspace
 
 # Abstra
 # Abstra is an AI-powered process automation framework.
@@ -186,13 +195,20 @@ cython_debug/
 #  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
 #  and can be added to the global gitignore or merged into this file. However, if you prefer, 
 #  you could uncomment the following to ignore the entire vscode folder
-# .vscode/
+ .vscode/
 
 # Ruff stuff:
 .ruff_cache/
 
 # PyPI configuration file
 .pypirc
+
+# data directories
+data/raw/
+data/tmp/
+data/cache/
+data/**/*.zip
+data/**/*.gz
 
 # Cursor
 #  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
@@ -205,3 +221,33 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+*.pyc
+*.pyo
+*.pyd
+registry.db
+
+# dbt
+dbt/target/
+dbt/.user.yml
+dbt/dbt_packages/
+dbt/logs/
+dbt/package-lock.yml
+dbt/.pytest_cache/
+
+#Feast
+feature_repo/registry.db
+feature_repo/.feast/
+**/feast*.lock
+
+
+#docker
+pg_data/
+redis_data/
+docker/*.log
+docker-compose.override.yml
+
+# misc generated
+reports/
+artifacts/
+coverage/

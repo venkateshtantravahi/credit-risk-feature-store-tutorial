@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw_src
+    database: credit_risk
+    schema: raw
+    tables:
+      - name: accepted_2007_to_2018q4
+      - name: rejected_2007_to_2018q4

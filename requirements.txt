@@ -1,0 +1,11 @@
+feast
+pandas
+sqlalchemy
+psycopg2-binary
+scikit-learn
+kaggle
+dbt-postgres
+python-dotenv
+redis
+pyarrow
+tqdm
