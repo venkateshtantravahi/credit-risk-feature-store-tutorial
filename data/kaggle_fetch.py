@@ -39,21 +39,29 @@ BASE_DIR = Path(__file__).resolve().parent
 RAW_DIR = BASE_DIR / "raw"
 METADATA_DIR = BASE_DIR / "metadata"
 
+
 # Custom Exceptions
 # To provide more specific and informative error messages for granular error handling.
 class KaggleFetchError(Exception):
     """Base exception for errors in this script."""
+
     pass
+
 
 class KaggleApiError(KaggleFetchError):
     """Raised when there is an issue with the kaggle API."""
+
     pass
+
 
 class FileProcessingError(KaggleFetchError):
     """Raised when there is an issue with file processing."""
+
     pass
 
+
 # Core Functions
+
 
 def setup_directories():
     """
@@ -64,7 +72,9 @@ def setup_directories():
     try:
         RAW_DIR.mkdir(parents=True, exist_ok=True)
         METADATA_DIR.mkdir(parents=True, exist_ok=True)
-        logging.info(f"Data directories ensured to exist at {RAW_DIR} and {METADATA_DIR}")
+        logging.info(
+            f"Data directories ensured to exist at {RAW_DIR} and {METADATA_DIR}"
+        )
     except OSError as e:
         logging.error(f"Failed to setup directories: {e}")
         raise FileProcessingError(f"Could not setup directories: {e}") from e
@@ -85,7 +95,9 @@ def get_kaggle_api() -> KaggleApi:
         logging.info(f"Kaggle API authenticated")
         return api
     except Exception as e:
-        logging.error(f"Kaggle API authentication failed. Ensure kaggle.json is configured")
+        logging.error(
+            f"Kaggle API authentication failed. Ensure kaggle.json is configured"
+        )
         raise KaggleApiError("Could not authenticate") from e
 
 
@@ -102,16 +114,12 @@ def download_dataset(api: KaggleApi, dataset_slug: str):
     logging.info(f"Downloading dataset {dataset_slug}")
     try:
         api.dataset_download_files(
-            dataset_slug,
-            path=str(RAW_DIR),
-            force=False,
-            quiet=False
+            dataset_slug, path=str(RAW_DIR), force=False, quiet=False
         )
         logging.info(f"Dataset {dataset_slug} downloaded successfully.")
     except Exception as e:
         logging.error(f"Failed to download dataset {dataset_slug}: {e}")
         raise KaggleApiError("Could not download dataset") from e
-
 
 
 def extract_dataset(zip_path: Path) -> List[Path]:
@@ -127,17 +135,25 @@ def extract_dataset(zip_path: Path) -> List[Path]:
 
     logging.info(f"Extracting dataset from {zip_path.name}")
     try:
-        with zipfile.ZipFile(zip_path, 'r') as zf:
+        with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(RAW_DIR)
             extracted_files = [RAW_DIR / name for name in zf.namelist()]
             logging.info(f"Extracted {len(extracted_files)} files.")
             return extracted_files
     except zipfile.BadZipFile as e:
-        logging.error(f"Failed to extract dataset from {zip_path.name} bad zip file: {e}")
-        raise FileProcessingError(f"Failed to extract dataset from {zip_path.name} bad zip file: {e}")
+        logging.error(
+            f"Failed to extract dataset from {zip_path.name} bad zip file: {e}"
+        )
+        raise FileProcessingError(
+            f"Failed to extract dataset from {zip_path.name} bad zip file: {e}"
+        )
     except Exception as e:
-        logging.error("An error occurred when extracting dataset from {zip_path.name}: {e}")
-        raise FileProcessingError(f"Failed to extract dataset from {zip_path.name}: {e}")
+        logging.error(
+            "An error occurred when extracting dataset from {zip_path.name}: {e}"
+        )
+        raise FileProcessingError(
+            f"Failed to extract dataset from {zip_path.name}: {e}"
+        )
 
 
 def extract_all_archives_recursive(root_dir: Path) -> list[Path]:
@@ -197,7 +213,9 @@ def find_csv_files(extracted_files: List[Path]) -> List[Path]:
         elif suf in (".xlsx", ".xls"):
             tabular.append(p)
     if not tabular:
-        raise FileNotFoundError("No CSV/CSV.GZ files were found in the extracted dataset.")
+        raise FileNotFoundError(
+            "No CSV/CSV.GZ files were found in the extracted dataset."
+        )
     logging.info(f"Found {len(tabular)} tabular files: {[p.name for p in tabular]}")
     return sorted(tabular, key=lambda p: p.stat().st_size, reverse=True)
 
@@ -215,11 +233,20 @@ def infer_and_write_schema(csv_path: Path, sample_rows: int = 10000) -> Path:
     file_size_mb = csv_path.stat().st_size / 1e6
     logging.info(f"Processing CSV file {csv_path.name} with size {file_size_mb} MB")
 
-    compression = "infer" if csv_path.suffix.lower() in {".gz"} or csv_path.name.lower().endswith(".csv.gz") else None
+    compression = (
+        "infer"
+        if csv_path.suffix.lower() in {".gz"}
+        or csv_path.name.lower().endswith(".csv.gz")
+        else None
+    )
 
-    logging.info(f"Inferring schema from {csv_path.name} by sampling {sample_rows} rows")
+    logging.info(
+        f"Inferring schema from {csv_path.name} by sampling {sample_rows} rows"
+    )
     try:
-        df = pd.read_csv(csv_path, nrows=sample_rows, low_memory=False, compression=compression)
+        df = pd.read_csv(
+            csv_path, nrows=sample_rows, low_memory=False, compression=compression
+        )
         schema: Dict[str, str] = {}
         for col, dtype in df.dtypes.items():
             if pd.api.types.is_integer_dtype(dtype):
@@ -235,7 +262,9 @@ def infer_and_write_schema(csv_path: Path, sample_rows: int = 10000) -> Path:
                 # reasonable varchar length, where a text is a safe default.
                 sql_type = "TEXT"
             schema[col] = sql_type
-        logging.info(f"Schema inference complete for {csv_path.name}. Found {len(schema)} columns.")
+        logging.info(
+            f"Schema inference complete for {csv_path.name}. Found {len(schema)} columns."
+        )
 
         schema_file_path = METADATA_DIR / f"{csv_path.stem}_schema.json"
         table_name = csv_path.stem.lower().replace("-", "_")
@@ -252,10 +281,16 @@ def infer_and_write_schema(csv_path: Path, sample_rows: int = 10000) -> Path:
 
     except FileNotFoundError as e:
         logging.error(f"CSV file not found for schema inference {csv_path}.")
-        raise FileProcessingError(f"CSV file not found for schema inference {csv_path}.")
+        raise FileProcessingError(
+            f"CSV file not found for schema inference {csv_path}."
+        )
     except Exception as e:
-        logging.error(f"An unknown error occurred when inferring schema from {csv_path}: {e}")
-        raise FileProcessingError(f"Unknown error occurred when inferring schema from {csv_path}: {e}")
+        logging.error(
+            f"An unknown error occurred when inferring schema from {csv_path}: {e}"
+        )
+        raise FileProcessingError(
+            f"Unknown error occurred when inferring schema from {csv_path}: {e}"
+        )
 
 
 def main():
@@ -280,7 +315,9 @@ def main():
             raise FileProcessingError(f"Expected zip not found: {zip_path}")
         logging.info(f"Extracting files from {zip_path.name}...")
         extract_dataset(zip_path)
-        logging.info(f"Top-level extraction done. Now expanding nested archives (if any)...")
+        logging.info(
+            f"Top-level extraction done. Now expanding nested archives (if any)..."
+        )
 
         all_files = extract_all_archives_recursive(RAW_DIR)
 

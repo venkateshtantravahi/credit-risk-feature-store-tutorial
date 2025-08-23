@@ -3,7 +3,7 @@
 with r as (
     select
         state,
-        date_trunc('month', event_timestamp) as event_timestamp,
+        date_trunc('month', event_timestamp) as event_timestamp
     from {{ ref('rejected_loans') }}
     where state is not null
 )

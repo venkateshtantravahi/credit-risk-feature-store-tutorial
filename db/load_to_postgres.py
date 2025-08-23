@@ -37,25 +37,32 @@ logging.basicConfig(
 
 # Constants
 PROJECT_ROOT = Path(os.getenv("PROJECT_ROOT"))
-RAW_DIR = PROJECT_ROOT / "data" / "raw"
+RAW_DIR = PROJECT_ROOT / "data" / "raw_filtered"
 METADATA_DIR = PROJECT_ROOT / "data" / "metadata"
 
 
 # Custom Exceptions
 class PostgresLoaderError(Exception):
     """Base exception for errors in this script"""
+
     pass
+
 
 class DatabaseConnectionError(PostgresLoaderError):
     """Raised when a database connection fails"""
+
     pass
+
 
 class SchemaValidationError(PostgresLoaderError):
     """Raised when a schema validation fails"""
+
     pass
+
 
 class FileLoadError(PostgresLoaderError):
     """Raised when a file load fails during COPY operation"""
+
     pass
 
 
@@ -66,6 +73,7 @@ class IterableTextIO(io.TextIOBase):
     behave like a file-like object with a `read()` method, which is required
     for psycopg2's `copy_expert` command.
     """
+
     def __init__(self, iterator: Iterator[str]) -> None:
         self._iterator = iterator
         self._buffer = ""
@@ -109,6 +117,7 @@ class PostgresLoader:
     Handles the end-to-end process of loading data into Postgres SQL
     based on JSON schema definitions.
     """
+
     def __init__(self, engine: Engine) -> None:
         self.engine = engine
 
@@ -122,10 +131,14 @@ class PostgresLoader:
         try:
             with self.engine.begin() as conn:
                 for schema_name in schema_names:
-                    conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS {self._quote_ident(schema_name)}'))
+                    conn.execute(
+                        text(
+                            f"CREATE SCHEMA IF NOT EXISTS {self._quote_ident(schema_name)}"
+                        )
+                    )
             logging.info("Database schema are ready.")
         except SQLAlchemyError as e:
-            logging.error(f'Failed to create database schemas: {e}')
+            logging.error(f"Failed to create database schemas: {e}")
             raise DatabaseConnectionError("Failed to create database schemas.") from e
 
     def load_all_tables(self):
@@ -135,7 +148,9 @@ class PostgresLoader:
         """
         schema_jsons = sorted(METADATA_DIR.glob("*_schema.json"))
         if not schema_jsons:
-            raise FileNotFoundError(f"No schema metadata found in {METADATA_DIR}. Run the data fetcher first.")
+            raise FileNotFoundError(
+                f"No schema metadata found in {METADATA_DIR}. Run the data fetcher first."
+            )
 
         all_data_files = self._list_tabular_files()
         if not all_data_files:
@@ -148,7 +163,6 @@ class PostgresLoader:
                 logging.warning(f"Skipping table due to an error: {e}")
                 continue
 
-
     def process_schema_file(self, sjson_path: Path, all_data_files: List[Path]) -> None:
         """
         Processes a single schema JSON file, creates the corresponding table,
@@ -158,24 +172,34 @@ class PostgresLoader:
         :return:
         """
         table_name, schema_cols = self._read_and_parse_schema(sjson_path)
-        logging.info(f"Processing schema {sjson_path.name} for table raw.{table_name} ({len(schema_cols)} columns)")
+        logging.info(
+            f"Processing schema {sjson_path.name} for table raw.{table_name} ({len(schema_cols)} columns)"
+        )
 
         self._ensure_table_exists("raw", table_name, schema_cols)
 
-        candidate_files = self._find_matching_files(str(table_name), sjson_path.name, all_data_files)
+        candidate_files = self._find_matching_files(
+            str(table_name), sjson_path.name, all_data_files
+        )
         if not candidate_files:
-            logging.warning(f"No data files found matching table {table_name}. Skipping.")
+            logging.warning(
+                f"No data files found matching table {table_name}. Skipping."
+            )
             return
 
         for file_path in candidate_files:
             logging.info(f"Loading data from {file_path.name} into raw {table_name}")
             try:
-                self._copy_file_into_table("raw", table_name, list(schema_cols.keys()), file_path)
+                self._copy_file_into_table(
+                    "raw", table_name, list(schema_cols.keys()), file_path
+                )
             except FileLoadError as e:
                 logging.error(f"Failed to load {file_path.name} into {table_name}: {e}")
                 continue
 
-    def _ensure_table_exists(self, schema: str, table: Path, cols: Dict[str, str]) -> None:
+    def _ensure_table_exists(
+        self, schema: str, table: Path, cols: Dict[str, str]
+    ) -> None:
         """
         Creates a table in the database if it does not already exist.
         ** CRITICAL **: All columns are created as TEXT to ensure robust loading.
@@ -186,16 +210,20 @@ class PostgresLoader:
         :return:
         """
         # Force all columns to TEXT for robust rae data loading.
-        cols_sql = ",\n  ".join([f'{self._quote_ident(c)} TEXT' for c in cols.keys()])
-        ddl = f'CREATE TABLE IF NOT EXISTS {self._quote_ident(schema)}.{self._quote_ident(str(table))} (\n  {cols_sql}\n);'
+        cols_sql = ",\n  ".join([f"{self._quote_ident(c)} TEXT" for c in cols.keys()])
+        ddl = f"CREATE TABLE IF NOT EXISTS {self._quote_ident(schema)}.{self._quote_ident(str(table))} (\n  {cols_sql}\n);"
         try:
             with self.engine.begin() as conn:
                 conn.execute(text(ddl))
         except SQLAlchemyError as e:
-            logging.error(f'Failed to execute DDL for table {schema}.{table}: {e}')
-            raise DatabaseConnectionError(f"Could not create table {schema}.{table}: {e}") from e
+            logging.error(f"Failed to execute DDL for table {schema}.{table}: {e}")
+            raise DatabaseConnectionError(
+                f"Could not create table {schema}.{table}: {e}"
+            ) from e
 
-    def _copy_file_into_table(self, schema: str, table: Path, columns: List[str], path: Path) -> None:
+    def _copy_file_into_table(
+        self, schema: str, table: Path, columns: List[str], path: Path
+    ) -> None:
         """
         Uses PostgreSQL's COPY command to efficiently stream data from a file into table.
         :param schema: The database schema name.
@@ -231,8 +259,9 @@ class PostgresLoader:
             if raw_conn is not None:
                 raw_conn.close()
 
-
-    def _create_copy_generator(self, file_handle: TextIO, table_columns: List[str]) -> Generator[str, None, None]:
+    def _create_copy_generator(
+        self, file_handle: TextIO, table_columns: List[str]
+    ) -> Generator[str, None, None]:
         """
         A generator that reads a csv file, remaps columns on the fly, and yields
         lines in a format suitable for the COPY command.
@@ -251,11 +280,15 @@ class PostgresLoader:
         # Guard against duplicate headers in the source file
         normalized_headers = [self._normalize_identifier(h) for h in file_header]
         if len(normalized_headers) != len(set(normalized_headers)):
-            logging.warning(f'Duplicate column headers found in the file {file_handle.name} after normalization. This may lead to incorrect data mapping')
+            logging.warning(
+                f"Duplicate column headers found in the file {file_handle.name} after normalization. This may lead to incorrect data mapping"
+            )
 
         file_header_map = {norm_h: i for i, norm_h in enumerate(normalized_headers)}
 
-        index_map: List[Optional[int]] = [file_header_map.get(col) for col in table_columns]
+        index_map: List[Optional[int]] = [
+            file_header_map.get(col) for col in table_columns
+        ]
 
         yield ",".join(f'"{c}"' for c in table_columns) + "\n"
 
@@ -283,13 +316,19 @@ class PostgresLoader:
             meta = json.loads(path.read_text())
             source_csv = meta.get("source_csv")
             if not source_csv:
-                raise SchemaValidationError("Schema JSON must contain a 'source_csv' key.")
+                raise SchemaValidationError(
+                    "Schema JSON must contain a 'source_csv' key."
+                )
 
-            table_name = PostgresLoader._normalize_identifier(meta.get("table_name") or Path(source_csv).stem)
+            table_name = PostgresLoader._normalize_identifier(
+                meta.get("table_name") or Path(source_csv).stem
+            )
 
             schema_data = meta.get("schema")
             if not isinstance(schema_data, dict):
-                raise SchemaValidationError("'schema' key must contain a dictionary of columns.")
+                raise SchemaValidationError(
+                    "'schema' key must contain a dictionary of columns."
+                )
 
             cols = {
                 PostgresLoader._normalize_identifier(k): v
@@ -300,7 +339,9 @@ class PostgresLoader:
             raise SchemaValidationError(f"Invalid schema file {path.name}: {e}") from e
 
     @staticmethod
-    def _find_matching_files(table_name: str, sjson_name: str, files: List[Path]) -> List[Path]:
+    def _find_matching_files(
+        table_name: str, sjson_name: str, files: List[Path]
+    ) -> List[Path]:
         """
         Finds data files that are likely associated with a given table name.
         :param table_name: The name of the table.
@@ -313,7 +354,11 @@ class PostgresLoader:
         if candidates:
             return candidates
 
-        key = "accepted" if "accepted" in sjson_name.lower() else ("rejected" if "rejected" in sjson_name.lower() else None)
+        key = (
+            "accepted"
+            if "accepted" in sjson_name.lower()
+            else ("rejected" if "rejected" in sjson_name.lower() else None)
+        )
         if key:
             return [p for p in files if key in p.name.lower()]
 
@@ -326,10 +371,17 @@ class PostgresLoader:
         in the raw data directory.
         :return:
         """
-        return sorted([p for p in RAW_DIR.rglob("*") if p.is_file() and
-                       (p.name.lower().endswith(".csv") or
-                        p.name.lower().endswith(".csv.gz"))
-                       ])
+        return sorted(
+            [
+                p
+                for p in RAW_DIR.rglob("*")
+                if p.is_file()
+                and (
+                    p.name.lower().endswith(".csv")
+                    or p.name.lower().endswith(".csv.gz")
+                )
+            ]
+        )
 
     @staticmethod
     def _normalize_identifier(name: str) -> str:
@@ -352,7 +404,6 @@ class PostgresLoader:
         :return:
         """
         return '"' + name.replace('"', '""') + '"'
-
 
 
 # Main Execution
@@ -391,7 +442,9 @@ def main():
     except (PostgresLoaderError, FileNotFoundError, EnvironmentError) as e:
         logging.error(f" A critical error occurred: {e}")
     except Exception as e:
-        logging.error(f"An unexpected and unhandled error occurred : {e}", exc_info=True)
+        logging.error(
+            f"An unexpected and unhandled error occurred : {e}", exc_info=True
+        )
 
 
 if __name__ == "__main__":

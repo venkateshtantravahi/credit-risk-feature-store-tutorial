@@ -1,0 +1,16 @@
+project: lending_club_features
+# By default, the registry is a file (but can be turned into a more scalable SQL-backed registry)
+registry: data/registry.db
+# The provider primarily specifies default offline / online stores & storing the registry in a given cloud
+provider: local
+offline_store:
+    type: postgres
+    host: localhost
+    port: 5432
+    database: credit_risk
+    db_schema: staging_features
+    user: postgres_admin
+    password: POstGresAdmin
+online_store:
+    type: redis
+    connection_string: "localhost:6379"

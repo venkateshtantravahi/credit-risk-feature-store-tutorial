@@ -36,3 +36,4 @@ models:
       +materialized: table
     features:
       +materialized: table
+      +schema: features

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:14.9
@@ -12,13 +10,13 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       PGDATA: ${PGDATA}  # Recommended for versioned structure
     command: >
-      -c max_wal_size=4GB
+      -c max_wal_size=2GB
       -c checkpoint_timeout=15min
-      -c shared_buffers=512MB
+      -c shared_buffers=128MB
       -c wal_compression=on
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d  # Optional: init scripts
+      - ./db/init:/docker-entrypoint-initdb.d
     ports:
       - "${POSTGRES_PORT}:5432"
 

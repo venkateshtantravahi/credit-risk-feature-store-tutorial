@@ -2,7 +2,7 @@
 
 WITH base AS (
     select
-        customer_id,
+        loan_id,
         date_trunc('month', event_timestamp) as event_timestamp,
         loan_amount,
         funded_amount,
@@ -16,7 +16,7 @@ WITH base AS (
 )
 
 select
-    customer_id,
+    loan_id,
     event_timestamp,
     loan_amount,
     funded_amount,

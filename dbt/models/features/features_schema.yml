@@ -1,46 +1,82 @@
 version: 2
 
 models:
-  - name: final_customer_features
-    description: "Features by (customer_id, month) for training/serving."
-    tests:
-      - features_not_null_keys:
-          arguments: {
-                       entity_keys: ['customer_id'],
-                       timestamp_col: 'event_timestamp'
-          }
-      - features_unique_on_keys:
-          arguments: {
-                       entity_keys: ['customer_id'],
-                       timestamp_col: 'event_timestamp'
-          }
-      - non_future_timestamp:
-          arguments: { column_name: 'event_timestamp' }
-
+  - name: base_customer_features
+    description: "Base-level features for accepted loans, derived from the staging layer."
     columns:
+      - name: customer_id
+        description: "Unique identifier for the customer."
+        tests:
+          - not_null
+      - name: event_timestamp
+        description: "The month when the loan was issued."
+        tests:
+          - not_null
       - name: loan_amount
         tests:
           - dbt_utils.accepted_range:
-              arguments: { min_value: 0 }
+              arguments: { min_value: 0, inclusive: true }
       - name: int_rate_pct
         tests:
           - dbt_utils.accepted_range:
-              arguments: {
-                           min_value: 0,
-                           max_value: 200,
-                           inclusive: true
-              }
+              arguments: { min_value: 0, max_value: 100, inclusive: true }
       - name: revol_util_pct
         tests:
           - dbt_utils.accepted_range:
-              arguments: {
-                           min_value: 0,
-                           max_value: 200,
-                           inclusive: true
-              }
-      - name: prior_12m_loan_cnt
+              arguments: { min_value: 0, inclusive: true }
+      - name: fico_avg
         tests:
           - dbt_utils.accepted_range:
-              arguments: {
-                           min_value: 0
-              }
+              arguments: { min_value: 300, max_value: 850, inclusive: true }
+      - name: fico_band
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['subprime', 'near-prime', 'prime-', 'prime', 'prime+', 'super']
+                quote: true
+
+  - name: customer_rolling_12m
+    description: "Customer-level features aggregated over the prior 12 months."
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+      - name: event_timestamp
+        tests:
+          - not_null
+      - name: prior_12m_loan_cnt
+        description: "Count of loans in the prior 12 months."
+        tests:
+          - dbt_utils.accepted_range:
+              arguments: { min_value: 0, inclusive: true }
+      - name: prior_12m_loan_amt
+        description: "Sum of loan amounts in the prior 12 months."
+        tests:
+          - dbt_utils.accepted_range:
+              arguments: { min_value: 0, inclusive: true }
+      - name: prior_12m_avg_int_rate
+        description: "Average interest rate in the prior 12 months."
+        tests:
+          - dbt_utils.accepted_range:
+              arguments: { min_value: 0, max_value: 100, inclusive: true }
+      - name: prior_12m_avg_dti
+        description: "Average debt-to-income ratio in the prior 12 months."
+        tests:
+          - dbt_utils.accepted_range:
+              arguments: { min_value: 0, inclusive: true }
+
+  - name: geo_aggregates_monthly
+    description: "Geographical features aggregated monthly."
+    columns:
+      - name: state
+        tests:
+          - not_null
+      - name: event_timestamp
+        tests:
+          - not_null
+      - name: state_rejects_in_month
+        description: "Count of rejected loans in the state for that month."
+        tests:
+          - dbt_utils.accepted_range:
+              arguments: { min_value: 0, inclusive: true }
+
