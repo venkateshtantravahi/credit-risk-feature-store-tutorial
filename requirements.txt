@@ -10,3 +10,6 @@ redis
 pyarrow
 tqdm
 feast[postgres]
+ucimlrepo
+matplotlib
+seaborn
