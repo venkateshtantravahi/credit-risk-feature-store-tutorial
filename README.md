@@ -1,4 +1,4 @@
-# 🏦 Credit Risk Feature Store Tutorial using Feast, dbt, PostgreSQL & Redis
+# Credit Risk Feature Store Tutorial using Feast, dbt, PostgreSQL & Redis
 
 This project is a complete, production-style walkthrough of how to build a **real-time feature store** using [Feast](https://docs.feast.dev/), [dbt](https://docs.getdbt.com/), and the **Lending Club loan dataset**.
 
@@ -12,7 +12,7 @@ It demonstrates the full journey:
 
 ---
 
-## 📊 Dataset Used
+## Dataset Used
 
 * **Source**: [Kaggle - Lending Club](https://www.kaggle.com/datasets/wordsforthewise/lending-club)
 * **Years Covered**: 2007–2018
@@ -27,7 +27,7 @@ Due to the lack of `customer_id`, all features are engineered at the **loan leve
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 credit-risk-feature-store-tutorial/
@@ -67,7 +67,7 @@ credit-risk-feature-store-tutorial/
 
 ---
 
-## ⚙️ How Each Script Works
+## How Each Script Works
 
 | Script / Component     | Purpose                                                 |
 | ---------------------- | ------------------------------------------------------- |
@@ -81,7 +81,7 @@ credit-risk-feature-store-tutorial/
 
 ---
 
-## 🐳 Cloning the Repository
+## Cloning the Repository
 
 ```bash
 git clone https://github.com/venkateshtantravahi/credit-risk-feature-store-tutorial.git
@@ -90,9 +90,9 @@ cd credit-risk-feature-store-tutorial
 
 ---
 
-## 🔧 Setting Up the Environment
+## Setting Up the Environment
 
-### 1. 🔐 Configure `.env`
+### 1. Configure `.env`
 
 Create a `.env` file in the root directory with the following:
 
@@ -108,7 +108,7 @@ KAGGLE_KEY=<your-kaggle-api-key>
 
 > Make sure Kaggle API access is set up: [https://www.kaggle.com/docs/api](https://www.kaggle.com/docs/api)
 
-### 2. 🚪 Start Docker containers
+### 2. Start Docker containers
 
 ```bash
 docker-compose up -d
@@ -119,7 +119,7 @@ This runs:
 * `postgres:14.9` on `${POSTGRES_PORT}`
 * `redis:6.2` on `${REDIS_PORT}`
 
-### 3. 🐍 Create and activate Python environment
+### 3. Create and activate Python environment
 
 ```bash
 conda create -n feast_feature_store python=3.11
@@ -130,9 +130,9 @@ pip install -r requirements.txt
 
 ---
 
-## 🔮 Running the Pipeline
+## Running the Pipeline
 
-### 1. 📂 Load and process data
+### 1. Load and process data
 
 ```bash
 python data/kaggle_fetch.py
@@ -140,7 +140,7 @@ python data/filter_data.py
 python db/load_to_postgres.py
 ```
 
-### 2. 🛠️ Set up dbt
+### 2. Set up dbt
 
 ```bash
 cd dbt
@@ -148,20 +148,20 @@ dbt init .
 dbt build
 ```
 
-### 3. 🔠 Apply Feast definitions
+### 3. Apply Feast definitions
 
 ```bash
 cd lending_club_features
 feast apply
 ```
 
-### 4. 🕰️ Materialize features
+### 4. Materialize features
 
 ```bash
 feast materialize 2007-01-01T00:00:00 2011-12-31T23:59:59
 ```
 
-### 5. 🚀 Query online features
+### 5. Query online features
 
 ```bash
 python query_online.py
@@ -171,16 +171,16 @@ python query_online.py
 
 ---
 
-## 🔄 Customization Tips
+## Customization Tips
 
-* ✅ Add new features inside `dbt/models/features/`
-* ✅ Extend entities (e.g., state-level aggregations)
-* ✅ Use `feast materialize-incremental` for incremental updates
-* ✅ Switch online/offline stores (Redis → DynamoDB, Postgres → BigQuery)
+* Add new features inside `dbt/models/features/`
+* Extend entities (e.g., state-level aggregations)
+* Use `feast materialize-incremental` for incremental updates
+* Switch online/offline stores (Redis → DynamoDB, Postgres → BigQuery)
 
 ---
 
-## 📌 Final Thoughts
+## Final Thoughts
 
 This project provides a real-world example of combining modern data engineering tools to power machine learning feature workflows.
 
@@ -188,16 +188,16 @@ This project provides a real-world example of combining modern data engineering 
 
 ---
 
-## 📋 Resources
+## Resources
 
-* 📘 [Feast Docs](https://docs.feast.dev/)
-* 📘 [dbt Docs](https://docs.getdbt.com/)
-* 🐃 [PostgreSQL](https://www.postgresql.org/)
-* 🨠 [Redis](https://redis.io/)
-* 📦 [Kaggle Lending Club Dataset](https://www.kaggle.com/datasets/wordsforthewise/lending-club)
+* [Feast Docs](https://docs.feast.dev/)
+* [dbt Docs](https://docs.getdbt.com/)
+* [PostgreSQL](https://www.postgresql.org/)
+* [Redis](https://redis.io/)
+* [Kaggle Lending Club Dataset](https://www.kaggle.com/datasets/wordsforthewise/lending-club)
 
 ---
 
-## 🧑‍💻 Author
+## Author
 
 Built by [Venkatesh Tantravahi](https://github.com/venkateshtantravahi) — feel free to open an issue or PR if you'd like to collaborate or improve this repo!
